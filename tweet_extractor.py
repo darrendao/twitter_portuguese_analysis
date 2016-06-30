@@ -1,28 +1,29 @@
 from twitter import *
-import pandas as pd
 import codecs
 import os
 from datetime import datetime
 import time
+from kafka import KafkaProducer
+
+#producer = KafkaProducer(bootstrap_servers='localhost:9092')
 
 starttime=time.time()
 
-t = Twitter(auth=OAuth(consumer_key, consumer_secret, access_token_key, access_token_secret))
+t = Twitter(auth=OAuth(x,x,x,x))
 
 portuguese_dict = ['contador', 'pequena empresa', 'micro empresa', 'financiamento', 'microempreededor', 'empreendedor', 'autonomo', 'senac']
 
 def search_by_term(term):
     return t.search.tweets(q=term, lang='pt', count=100)['statuses']
 
-def write_tweets(dest_file, dictionary=portuguese_dict):
-    result = []
+def write_tweets(dictionary=portuguese_dict):
     for word in dictionary:
-        result += search_by_term(word)
-    df = pd.DataFrame(result)
-    print 'TOTAL NUMBER OF TWEETS: ', len(df)
-    print 'TIME: ', str(datetime.now())
-    df.to_csv(dest_file, columns=['text', 'id’, ’created_at’], encoding='utf-8')
-
+        tweets = search_by_term(word)
+        for entry in [tweet['text'] for tweet in tweets]:
+            #print entry
+            producer.send(entry)
+            producer.flush()
+        
 while True:
-    write_tweets('portuguese_input'+ 'tweets' + str(time.time()) + '.csv')
+    write_tweets()
     time.sleep(900.0 - ((time.time() - starttime) % 900.0))
